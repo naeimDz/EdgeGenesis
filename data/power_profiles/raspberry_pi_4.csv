@@ -1,0 +1,9 @@
+model_name,idle_power_w,inference_power_w,avg_inference_time_ms,model_size_mb,accuracy_percent,parameters_millions
+YOLOv8-nano,2.5,4.2,45,6.0,80.4,3.2
+YOLOv8-small,2.5,5.8,78,22.0,86.2,11.2
+MobileNetV2,2.5,3.8,28,14.0,71.3,3.5
+EfficientNetB0,2.5,4.5,35,20.1,77.1,5.3
+TinyBERT,2.5,6.2,120,60.0,84.5,67.0
+EfficientNetB1,2.8,5.2,42,31.0,79.8,7.9
+MobileNetV3-Small,2.4,3.5,26,13.0,67.4,2.5
+DistilBERT,2.3,5.5,110,268.0,88.9,66.0
