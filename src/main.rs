@@ -1,6 +1,8 @@
 mod components;
 mod data_loader;
+mod hardware;
 mod models;
+mod policies;
 mod systems;
 
 use bevy::prelude::*;

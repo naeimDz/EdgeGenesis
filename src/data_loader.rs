@@ -28,9 +28,9 @@ pub struct SolarProfile {
 }
 
 impl SolarProfile {
-    /// Calculate power output from a 100W rated panel
+    /// Calculate power output from a 20W rated panel (IoT Scale)
     pub fn power_output_100w_panel(&self) -> f32 {
-        let panel_area_m2 = 0.6; // Typical 100W panel
+        let panel_area_m2 = 0.12; // Small IoT Panel (~20W)
         self.avg_irradiance_w_m2 * panel_area_m2 * self.panel_efficiency
     }
 }
@@ -48,6 +48,7 @@ pub fn get_model_power(
     }
 
     // Fallback to models.rs (always reliable)
+    // Standard RPi4 Idle
     (2.5, model.inference_power_w())
 }
 

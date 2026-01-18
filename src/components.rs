@@ -1,4 +1,6 @@
+use crate::hardware::HardwareSpec;
 use crate::models::RealModelType;
+use crate::policies::PowerPolicy;
 use bevy::prelude::*;
 use std::collections::HashMap;
 
@@ -17,6 +19,9 @@ pub struct Gene {
 
     /// Solar panel efficiency multiplier (0.8 - 1.2)
     pub solar_efficiency_factor: f32,
+
+    /// Power management strategy
+    pub policy: PowerPolicy,
 }
 
 /// Survival score - fitness metric
@@ -35,6 +40,7 @@ pub enum Status {
 pub struct EdgeNodeBundle {
     pub battery: Battery,
     pub gene: Gene,
+    pub hardware: HardwareSpec,
     pub survival_score: SurvivalScore,
     pub status: Status,
     pub transform: Transform,
