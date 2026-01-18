@@ -6,7 +6,6 @@ use rand::prelude::*;
 use std::time::Duration;
 
 use crate::components::*;
-use crate::data_loader::PowerProfile;
 
 const GRID_SIZE: i32 = 10;
 const GRID_SPACING: f32 = 50.0;
@@ -22,7 +21,17 @@ pub fn setup_grid(mut commands: Commands) {
     // Spawn 2D camera
     commands.spawn(Camera2d::default());
 
-    let all_models = ModelType::all();
+    // All available models from models.rs
+    let all_models = [
+        crate::models::RealModelType::YOLOv8Nano,
+        crate::models::RealModelType::YOLOv8Small,
+        crate::models::RealModelType::MobileNetV2,
+        crate::models::RealModelType::EfficientNetB0,
+        crate::models::RealModelType::TinyBERT,
+        crate::models::RealModelType::EfficientNetB1,
+        crate::models::RealModelType::MobileNetV3Small,
+        crate::models::RealModelType::DistilBERT,
+    ];
 
     for x in 0..GRID_SIZE {
         for y in 0..GRID_SIZE {
@@ -52,10 +61,10 @@ pub fn setup_grid(mut commands: Commands) {
     commands.insert_resource(EpochCount(0));
 }
 
-/// Physics system - handles battery dynamics using CSV data
+/// Physics system - uses models.rs with optional CSV overrides
 pub fn resource_physics_system(
     time: Res<Time>,
-    power_profiles: Res<LoadedPowerProfiles>,
+    power_overrides: Res<PowerOverrides>,
     solar_profiles: Res<LoadedSolarProfiles>,
     mut metrics: ResMut<SimulationMetrics>,
     mut query: Query<(&mut Battery, &mut SurvivalScore, &mut Status, &Gene)>,
@@ -63,10 +72,10 @@ pub fn resource_physics_system(
     let mut rng = rand::rng();
     let dt = time.delta_secs();
 
-    // Update simulation hour (1 real second = 1 simulation minute)
+    // Update simulation hour
     metrics.current_hour = (metrics.current_hour + dt / 60.0) % 24.0;
 
-    // Get solar output for current hour from CSV data
+    // Get solar output for current hour
     let current_hour_index = metrics.current_hour as usize % 24;
     let solar_output_w = solar_profiles
         .0
@@ -79,15 +88,9 @@ pub fn resource_physics_system(
             continue;
         }
 
-        // Get power profile from CSV
-        let model_name = gene.model_type.csv_name();
-        let power_profile = power_profiles.0.get(model_name);
-
-        // Battery drain based on CSV data
-        let (idle_power, inference_power) = match power_profile {
-            Some(p) => (p.idle_power_w, p.inference_power_w),
-            None => (2.5, 4.0), // Fallback defaults
-        };
+        // Get power using hybrid system (CSV override or models.rs default)
+        let (idle_power, inference_power) =
+            crate::data_loader::get_model_power(gene.model_type, power_overrides.0.as_ref());
 
         let power_w = BASE_POWER_DRAIN_W
             + if rng.random_bool(gene.inference_frequency as f64) {
@@ -128,7 +131,8 @@ pub fn render_nodes_system(
 ) {
     for (transform, battery, gene, status) in query.iter() {
         let position = transform.translation.truncate();
-        let radius = gene.model_type.radius();
+        // Radius based on model size (larger models = bigger circles)
+        let radius = (gene.model_type.size_mb() / 10.0).clamp(3.0, 20.0);
 
         let color = if *status == Status::Dead {
             Color::srgb(0.5, 0.5, 0.5) // Gray
@@ -152,7 +156,6 @@ pub fn genetic_epoch_system(
     mut commands: Commands,
     mut epoch_count: ResMut<EpochCount>,
     mut metrics: ResMut<SimulationMetrics>,
-    power_profiles: Res<LoadedPowerProfiles>,
     query: Query<(Entity, &Status, &SurvivalScore, &Gene)>,
 ) {
     println!("\n=== EPOCH {} ===", epoch_count.0);
@@ -187,14 +190,10 @@ pub fn genetic_epoch_system(
     let elite_count = (survivors.len() as f32 * 0.15).ceil() as usize;
     let elites = &survivors[0..elite_count.max(1)];
 
-    // Print best gene info using CSV data
+    // Print best gene info using RealModelType methods
     let best_gene = &elites[0].1;
-    let best_model_name = best_gene.model_type.csv_name();
-    let accuracy = power_profiles
-        .0
-        .get(best_model_name)
-        .map(|p| p.accuracy_percent)
-        .unwrap_or(0.0);
+    let best_model_name = best_gene.model_type.name();
+    let accuracy = best_gene.model_type.accuracy_percent();
 
     println!("📊 Population: {} alive", survivors.len());
     println!("🏆 Top fitness: {:.2}s", elites[0].0);
@@ -210,7 +209,16 @@ pub fn genetic_epoch_system(
     // Repopulation with mutation
     let mut rng = rand::rng();
     let offset = (GRID_SIZE as f32 * GRID_SPACING) / 2.0;
-    let all_models = ModelType::all();
+    let all_models = [
+        crate::models::RealModelType::YOLOv8Nano,
+        crate::models::RealModelType::YOLOv8Small,
+        crate::models::RealModelType::MobileNetV2,
+        crate::models::RealModelType::EfficientNetB0,
+        crate::models::RealModelType::TinyBERT,
+        crate::models::RealModelType::EfficientNetB1,
+        crate::models::RealModelType::MobileNetV3Small,
+        crate::models::RealModelType::DistilBERT,
+    ];
 
     for x in 0..GRID_SIZE {
         for y in 0..GRID_SIZE {

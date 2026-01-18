@@ -6,6 +6,7 @@ use serde::Deserialize;
 /// Real ML model types deployed on edge devices
 /// Each variant represents a production model with verified specifications
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[allow(dead_code)]
 pub enum RealModelType {
     /// YOLOv8-nano: Lightweight object detection
     /// Parameters: 3.2M | Size: 6.0MB | Accuracy: 80.4 mAP@0.5
@@ -52,6 +53,7 @@ pub enum RealModelType {
     DistilBERT,
 }
 
+#[allow(dead_code)]
 impl RealModelType {
     /// Get the canonical model name as a string
     pub fn name(&self) -> &'static str {
@@ -153,6 +155,7 @@ impl RealModelType {
 /// Edge device types for AI inference
 /// Each device has specific characteristics: power, compute, memory
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum DeviceType {
     /// Raspberry Pi 4: Single-board computer
     /// CPU: Quad-core ARM Cortex-A72 @ 1.5GHz
@@ -182,6 +185,7 @@ pub enum DeviceType {
     ESP32,
 }
 
+#[allow(dead_code)]
 impl DeviceType {
     /// Get device name as string
     pub fn name(&self) -> &'static str {
