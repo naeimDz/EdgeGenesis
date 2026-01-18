@@ -9,17 +9,19 @@ use crate::components::*;
 
 const GRID_SIZE: i32 = 10;
 const GRID_SPACING: f32 = 50.0;
-const BATTERY_CAPACITY_WH: f32 = 0.5; // Tiny capacity for fast simulation
-const SOLAR_EFFICIENCY_PENALTY: f32 = 0.0; // Total darkness (0 solar)
-const BASE_POWER_DRAIN_W: f32 = 20.0; // High drain to force death in ~60 seconds
+const BATTERY_CAPACITY_WH: f32 = 5.0; // Small capacity (requires management)
+const SOLAR_EFFICIENCY_PENALTY: f32 = 0.15; // Dim light (15% efficiency)
+const BASE_POWER_DRAIN_W: f32 = 1.0; // Low base drain (model choice matters)
+
+/// Setup camera
+pub fn setup_camera(mut commands: Commands) {
+    commands.spawn(Camera2d::default());
+}
 
 /// Setup system - spawns initial population of edge nodes
 pub fn setup_grid(mut commands: Commands) {
     let mut rng = rand::rng();
     let offset = (GRID_SIZE as f32 * GRID_SPACING) / 2.0;
-
-    // Spawn 2D camera
-    commands.spawn(Camera2d::default());
 
     // All available models from models.rs
     let all_models = [
@@ -116,7 +118,10 @@ pub fn resource_physics_system(
 
         // Death condition
         if battery.0 <= 0.0 {
-            *status = Status::Dead;
+            if *status != Status::Dead {
+                // println!("💀 Node died! (Battery depleted)"); // Optional: Uncomment for per-node death logs
+                *status = Status::Dead;
+            }
         } else {
             score.0 += dt;
             metrics.total_inferences += 1;
@@ -257,12 +262,13 @@ pub fn genetic_epoch_system(
 
 /// Register all systems with Bevy app
 pub fn register_systems(app: &mut App) {
-    app.add_systems(Startup, setup_grid).add_systems(
-        Update,
-        (
-            resource_physics_system,
-            render_nodes_system,
-            genetic_epoch_system.run_if(on_timer(Duration::from_secs(30))),
-        ),
-    );
+    app.add_systems(Startup, (setup_camera, setup_grid))
+        .add_systems(
+            Update,
+            (
+                resource_physics_system,
+                render_nodes_system,
+                genetic_epoch_system.run_if(on_timer(Duration::from_secs(30))),
+            ),
+        );
 }

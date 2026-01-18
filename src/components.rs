@@ -24,7 +24,7 @@ pub struct Gene {
 pub struct SurvivalScore(pub f32);
 
 /// Node status
-#[derive(Component, PartialEq, Eq)]
+#[derive(Component, PartialEq, Eq, Debug)]
 pub enum Status {
     Alive,
     Dead,
